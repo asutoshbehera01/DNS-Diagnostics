@@ -3,312 +3,416 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CreateDNS | Developer-Focused DNS Diagnostics</title>
-    <!-- Tailwind CSS CDN -->
+    <title>CreateDNS | Advanced Diagnostics</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tailwind Config for Dark Theme custom colors -->
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            500: '#3B82F6', // Blue-500
-                            600: '#2563EB', // Blue-600
-                            400: '#60A5FA',
-                        },
-                        dark: {
-                            900: '#0F172A',
-                            800: '#1E293B',
-                            700: '#334155',
-                        }
+                        brand: { 500: '#3B82F6', 600: '#2563EB', 400: '#60A5FA' },
+                        dark: { 900: '#0F172A', 800: '#1E293B', 700: '#334155' }
                     },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['Fira Code', 'monospace']
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['Fira Code', 'monospace'] }
                 }
             }
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0F172A;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #0F172A;
+            background: radial-gradient(circle at 50% 0%, #172442 0%, #0F172A 70%);
+            background-attachment: fixed;
         }
-        .glow:focus-within {
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-            border-color: #3B82F6;
-        }
-        /* Hide scrollbar for clean look */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1E293B; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569; 
-        }
+        .glow:focus-within { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); border-color: #3B82F6; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1E293B; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="text-slate-200 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+<body class="text-slate-200 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white relative">
+    
+    <!-- Canvas for Networking Background -->
+    <canvas id="network-bg" class="fixed top-0 left-0 w-full h-full z-[-1] opacity-50"></canvas>
 
-    <!-- Navigation -->
     <nav class="border-b border-dark-700 bg-dark-900/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-brand-500/20">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                 </div>
-                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 tracking-tight">Create<span class="text-brand-500">DNS</span></span>
-            </div>
-            <div class="hidden sm:flex items-center gap-6 text-sm font-medium text-slate-400">
-                <a href="#" class="hover:text-white transition-colors">Documentation</a>
-                <a href="#" class="hover:text-white transition-colors">API</a>
-                <a href="https://github.com" target="_blank" class="text-slate-300 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
-                </a>
+                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Create<span class="text-brand-500">DNS</span></span>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-grow flex flex-col items-center pt-20 px-4 sm:px-6 w-full max-w-4xl mx-auto">
+    <main class="flex-grow flex flex-col items-center pt-10 px-4 sm:px-6 w-full max-w-4xl mx-auto">
         
-        <!-- Hero Section -->
-        <div class="text-center mb-10 pb-4">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-                Lightning-Fast <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-indigo-400">DNS Diagnostics</span>
+        <div class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-3">
+                Ultimate <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-indigo-400">Domain Diagnostics</span>
             </h1>
-            <p class="text-slate-400 text-lg sm:text-lg max-w-2xl mx-auto font-medium">
-                Query records globally. View instant, structured results tailored for developers. Check A, AAAA, MX, CNAME, TXT, and NS records with an API-first engine.
+            <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+                Query records, run WHOIS lookups, and verify SSL certificates with an ultra-fast API backend.
             </p>
         </div>
 
-        <!-- Search App -->
-        <div class="w-full bg-dark-800 border border-dark-700 shadow-2xl shadow-black/40 rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300">
+        <!-- History Area -->
+        <div id="history-area" class="w-full flex justify-center gap-2 mb-6 flex-wrap hidden">
+            <span class="text-xs text-slate-500 font-medium py-1">Recent:</span>
+            <!-- History Badges injected here -->
+        </div>
+
+        <div class="w-full bg-dark-800 border border-dark-700 shadow-2xl rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300">
             
+            <!-- Tabs -->
+            <div class="flex border-b border-dark-700">
+                <button onclick="switchTab('dns')" id="tab-dns" class="flex-1 py-3 text-sm font-semibold transition-colors bg-dark-700/50 text-brand-400 border-b-2 border-brand-500">DNS Lookup</button>
+                <button onclick="switchTab('whois')" id="tab-whois" class="flex-1 py-3 text-sm font-semibold transition-colors bg-transparent text-slate-400 hover:bg-dark-700/30 border-b-2 border-transparent">WHOIS</button>
+                <button onclick="switchTab('ssl')" id="tab-ssl" class="flex-1 py-3 text-sm font-semibold transition-colors bg-transparent text-slate-400 hover:bg-dark-700/30 border-b-2 border-transparent">SSL Checks</button>
+            </div>
+
             <!-- Search Bar Area -->
-            <div class="p-2 bg-dark-800/50 border-b border-dark-700">
-                <form id="dns-form" class="flex flex-col sm:flex-row gap-2 relative">
-                    
-                    <!-- Record Type Dropdown -->
-                    <div class="relative w-full sm:w-32 glow transition-all duration-200 rounded-xl bg-dark-900 border border-dark-700 flex items-center">
+            <div class="p-3 bg-dark-800/50 border-b border-dark-700">
+                <form id="main-form" class="flex flex-col sm:flex-row gap-2 relative">
+                    <div id="record-type-container" class="relative w-full sm:w-32 glow transition-all duration-200 rounded-xl bg-dark-900 border border-dark-700 flex items-center">
                         <select id="record-type" class="w-full bg-transparent text-slate-200 font-semibold appearance-none py-3 pl-4 pr-10 focus:outline-none cursor-pointer">
-                            <option value="A" class="bg-dark-800 text-white">A</option>
-                            <option value="AAAA" class="bg-dark-800 text-white">AAAA</option>
-                            <option value="CNAME" class="bg-dark-800 text-white">CNAME</option>
-                            <option value="MX" class="bg-dark-800 text-white">MX</option>
-                            <option value="TXT" class="bg-dark-800 text-white">TXT</option>
-                            <option value="NS" class="bg-dark-800 text-white">NS</option>
+                            <option value="A" class="bg-dark-800">A</option>
+                            <option value="AAAA" class="bg-dark-800">AAAA</option>
+                            <option value="CNAME" class="bg-dark-800">CNAME</option>
+                            <option value="MX" class="bg-dark-800">MX</option>
+                            <option value="TXT" class="bg-dark-800">TXT</option>
+                            <option value="NS" class="bg-dark-800">NS</option>
+                            <option value="SOA" class="bg-dark-800">SOA</option>
+                            <option value="PTR" class="bg-dark-800">PTR</option>
                         </select>
                         <div class="absolute right-3 pointer-events-none text-slate-400">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
 
-                    <!-- Domain Input -->
                     <div class="relative flex-grow flex items-center bg-dark-900 border border-dark-700 rounded-xl glow transition-all duration-200">
-                        <div class="pl-4 text-slate-500">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                        <input id="domain-input" type="text" placeholder="example.com" class="w-full bg-transparent text-slate-200 py-3 px-3 focus:outline-none placeholder-slate-600 font-medium text-lg" required autocomplete="off" spellcheck="false" autofocus>
-                        
-                        <!-- Submit Button -->
-                        <button type="submit" class="absolute right-2 top-2 bottom-2 bg-brand-600 hover:bg-brand-500 text-white px-5 rounded-lg font-medium transition-colors focus:ring-2 focus:ring-brand-400 focus:outline-none flex items-center justify-center min-w-[100px]">
-                            <span id="btn-text">Lookup</span>
+                        <input id="domain-input" type="text" placeholder="example.com or 8.8.8.8" class="w-full bg-transparent text-slate-200 py-3 px-4 focus:outline-none font-medium text-lg" required autocomplete="off" spellcheck="false" autofocus>
+                        <button type="submit" class="absolute right-2 top-2 bottom-2 bg-brand-600 hover:bg-brand-500 text-white px-5 rounded-lg font-medium transition-colors focus:outline-none flex items-center justify-center min-w-[100px]">
+                            <span id="btn-text">Execute</span>
                             <svg id="btn-loader" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Results Area -->
+            <!-- Export Buttons -->
+            <div id="action-bar" class="hidden bg-dark-900/40 px-6 py-2 border-b border-dark-700 flex justify-end gap-2">
+                <button onclick="exportData('json')" class="text-xs text-slate-400 hover:text-white bg-dark-800 px-3 py-1 rounded border border-dark-700">Export JSON</button>
+                <button onclick="exportData('csv')" class="text-xs text-slate-400 hover:text-white bg-dark-800 px-3 py-1 rounded border border-dark-700">Export CSV</button>
+            </div>
+
             <div id="results-container" class="hidden">
-                <!-- Status Banner -->
-                <div id="status-banner" class="px-6 py-3 border-b flex items-center gap-3 text-sm font-medium">
-                    <span id="status-icon"></span>
-                    <span id="status-text"></span>
-                </div>
-                
-                <!-- Table View -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse" id="results-table">
-                        <thead class="bg-dark-900/30 text-xs uppercase tracking-wider text-slate-500 border-b border-dark-700">
-                            <tr>
-                                <th class="py-3 px-6 font-semibold">Type</th>
-                                <th class="py-3 px-6 font-semibold">Domain</th>
-                                <th class="py-3 px-6 font-semibold w-full">Value</th>
-                                <th class="py-3 px-6 font-semibold text-right">TTL</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-dark-700 font-mono text-sm text-slate-300" id="results-body">
-                            <!-- Rows injected via JS -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Empty / Error State -->
-                <div id="error-state" class="hidden py-16 px-6 flex flex-col items-center justify-center text-center">
-                    <div class="w-16 h-16 rounded-full bg-dark-700/50 flex items-center justify-center mb-4 text-slate-400" id="error-icon">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div id="status-banner" class="px-6 py-3 border-b flex items-center justify-between text-sm font-medium">
+                    <div class="flex items-center gap-3">
+                        <span id="status-icon"></span>
+                        <span id="status-text"></span>
+                        <span id="authenticity-badge" class="hidden transition-all duration-300"></span>
                     </div>
+                    <span id="latency-text" class="text-xs text-slate-500 font-mono"></span>
+                </div>
+                
+                <div class="overflow-x-auto" id="data-view">
+                    <!-- Tables/Data injected here -->
+                </div>
+                
+                <div id="error-state" class="hidden py-16 px-6 flex flex-col items-center justify-center text-center">
                     <h3 class="text-lg font-semibold text-slate-200 mb-1" id="error-title">No Records Found</h3>
-                    <p class="text-sm text-slate-400 max-w-sm" id="error-desc">We couldn't find any data for this domain. It might not exist or hasn't propagated yet.</p>
+                    <p class="text-sm text-slate-400 max-w-sm" id="error-desc"></p>
                 </div>
             </div>
 
-            <!-- Initial Empty State -->
             <div id="initial-state" class="py-20 px-6 flex flex-col items-center text-center text-slate-500 border-t border-dark-700/50 block">
-                <svg class="w-12 h-12 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                <p>Enter a domain to perform a recursive DNS lookup.</p>
-            </div>
-            
-            <!-- Skeleton Loader (Hidden by default) -->
-            <div id="skeleton-loader" class="hidden p-6 border-t border-dark-700">
-                <div class="h-5 bg-dark-700 rounded w-1/4 mb-6 animate-pulse"></div>
-                <div class="space-y-4">
-                    <div class="h-4 bg-dark-700 rounded w-full animate-pulse"></div>
-                    <div class="h-4 bg-dark-700 rounded w-5/6 animate-pulse"></div>
-                    <div class="h-4 bg-dark-700 rounded w-4/6 animate-pulse"></div>
-                </div>
-            </div>
-            
-        </div>
-        
-        <!-- API Info Card -->
-        <div class="mt-8 mb-16 px-6 py-5 w-full bg-dark-800/40 border border-dark-700/60 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <h4 class="text-slate-200 font-semibold mb-1 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"></path></svg>
-                    API Endpoint
-                </h4>
-                <p class="text-sm text-slate-400">Integrate CreateDNS directly into your workflow.</p>
-            </div>
-            <div class="flex items-center gap-2 bg-dark-900 border border-dark-700 py-2 px-3 rounded-lg overflow-hidden group w-full sm:w-auto">
-                <span class="text-brand-500 text-xs font-bold font-mono">GET</span>
-                <code class="text-xs text-slate-300 font-mono truncate">/api/lookup/{domain}?type=A</code>
-                <button type="button" class="ml-2 text-slate-500 hover:text-white transition-colors" onclick="navigator.clipboard.writeText('/api/lookup/{domain}?type=A')" title="Copy to clipboard">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                </button>
+                <p>Run diagnostics by entering a domain above.</p>
             </div>
         </div>
-
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-dark-800 py-8 text-center text-slate-500 text-sm">
-        <p>Built for developers. Fast, reliable, and straightforward.</p>
-    </footer>
-
     <script>
-        document.getElementById('dns-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const domain = document.getElementById('domain-input').value.trim();
-            const recordType = document.getElementById('record-type').value;
-            
-            if (!domain) return;
-            
-            // UI State variables
-            const btnText = document.getElementById('btn-text');
-            const btnLoader = document.getElementById('btn-loader');
-            const initial = document.getElementById('initial-state');
-            const skeleton = document.getElementById('skeleton-loader');
-            const results = document.getElementById('results-container');
-            const resultsTable = document.getElementById('results-table');
-            const resultsBody = document.getElementById('results-body');
-            const errorState = document.getElementById('error-state');
-            const errorTitle = document.getElementById('error-title');
-            const errorDesc = document.getElementById('error-desc');
-            const statusBanner = document.getElementById('status-banner');
-            const statusIcon = document.getElementById('status-icon');
-            const statusText = document.getElementById('status-text');
+        let currentMode = 'dns';
+        let lastResult = null; // Store for exporting
 
-            // Reset UI
-            initial.classList.add('hidden');
-            results.classList.add('hidden');
-            errorState.classList.add('hidden');
-            resultsTable.classList.remove('hidden');
-            skeleton.classList.remove('hidden');
+        // Load History
+        function loadHistory() {
+            const hist = JSON.parse(localStorage.getItem('cratedns_history') || '[]');
+            const area = document.getElementById('history-area');
+            if (hist.length > 0) {
+                area.classList.remove('hidden');
+                // preserve the "Recent:" span
+                const span = area.firstElementChild.outerHTML;
+                area.innerHTML = span + hist.map(d => `<button onclick="fillDomain('${d}')" class="text-xs bg-dark-800 border border-dark-700 hover:border-brand-500 text-slate-300 px-2 py-1 rounded transition-colors">${d}</button>`).join('');
+            }
+        }
+        function saveHistory(domain) {
+            let hist = JSON.parse(localStorage.getItem('cratedns_history') || '[]');
+            if (!hist.includes(domain)) {
+                hist.unshift(domain);
+                hist = hist.slice(0, 5); // Keep last 5
+                localStorage.setItem('cratedns_history', JSON.stringify(hist));
+                loadHistory();
+            }
+        }
+        function fillDomain(domain) {
+            document.getElementById('domain-input').value = domain;
+            document.getElementById('main-form').dispatchEvent(new Event('submit'));
+        }
+
+        // Tab Switching
+        function switchTab(mode) {
+            currentMode = mode;
+            document.getElementById('record-type-container').style.display = (mode === 'dns') ? 'flex' : 'none';
             
-            // Button loading state
-            btnText.classList.add('hidden');
-            btnLoader.classList.remove('hidden');
+            // Update Tab UI
+            ['dns', 'whois', 'ssl'].forEach(m => {
+                const el = document.getElementById(`tab-${m}`);
+                if(m === mode) {
+                    el.className = 'flex-1 py-3 text-sm font-semibold transition-colors bg-dark-700/50 text-brand-400 border-b-2 border-brand-500';
+                } else {
+                    el.className = 'flex-1 py-3 text-sm font-semibold transition-colors bg-transparent text-slate-400 hover:bg-dark-700/30 border-b-2 border-transparent';
+                }
+            });
             
+            // Reset Results UI
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('action-bar').classList.add('hidden');
+            document.getElementById('initial-state').classList.remove('hidden');
+            lastResult = null;
+        }
+
+        // Render Data Views
+        function renderDNS(records, domain) {
+            return `
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-dark-900/30 text-xs uppercase tracking-wider text-slate-500 border-b border-dark-700">
+                        <tr><th class="py-3 px-6">Type</th><th class="py-3 px-6">Domain</th><th class="py-3 px-6 w-full">Value</th><th class="py-3 px-6 text-right">TTL</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-dark-700 font-mono text-sm text-slate-300">
+                        ${records.map(r => {
+                            let valueHtml = r.value;
+                            // Badge formatting for SPF/DMARC in TXT
+                            if (r.record_type === 'TXT') {
+                                if (r.value.includes('v=spf1')) valueHtml = `<span class="bg-blue-900/40 text-blue-400 border border-blue-800 px-1 rounded mr-2 text-xs">SPF</span> ` + r.value;
+                                if (r.value.includes('v=DMARC1')) valueHtml = `<span class="bg-purple-900/40 text-purple-400 border border-purple-800 px-1 rounded mr-2 text-xs">DMARC</span> ` + r.value;
+                            }
+                            return `<tr class="hover:bg-dark-800/50 transition-colors">
+                                <td class="py-3 px-6"><span class="bg-dark-900 border border-dark-700 text-brand-400 px-2 py-1 rounded text-xs font-bold">${r.record_type}</span></td>
+                                <td class="py-3 px-6 text-slate-400">${domain}</td>
+                                <td class="py-3 px-6 text-slate-200 break-all">${valueHtml}</td>
+                                <td class="py-3 px-6 text-right text-slate-500">${r.ttl || '--'}s</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderWHOIS(data) {
+            return `<div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-dark-900 border border-dark-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-1">Registrar</p>
+                    <p class="text-slate-200 font-medium">${data.registrar || 'N/A'}</p>
+                </div>
+                <div class="bg-dark-900 border border-dark-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-1">Created</p>
+                    <p class="text-slate-200 font-medium">${data.creation_date ? new Date(data.creation_date).toLocaleDateString() : 'N/A'}</p>
+                </div>
+                <div class="bg-dark-900 border border-dark-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-1">Expires</p>
+                    <p class="text-slate-200 font-medium">${data.expiration_date ? new Date(data.expiration_date).toLocaleDateString() : 'N/A'}</p>
+                </div>
+                <div class="bg-dark-900 border border-dark-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-1">Name Servers</p>
+                    <p class="text-slate-200 font-medium whitespace-pre-line text-sm font-mono">${(data.name_servers || []).join('\\n') || 'N/A'}</p>
+                </div>
+            </div>`;
+        }
+
+        function renderSSL(data) {
+            const valid = new Date(data.valid_to) > new Date();
+            return `<div class="p-6">
+                <div class="flex items-center gap-4 bg-dark-900 border ${valid ? 'border-green-500/30' : 'border-red-500/30'} p-5 rounded-xl">
+                    <div class="h-12 w-12 rounded-full ${valid ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'} flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-white">${data.issuer}</h4>
+                        <p class="text-sm text-slate-400">Valid: ${new Date(data.valid_from).toLocaleDateString()} to <span class="${valid ? 'text-green-400' : 'text-red-400'}">${new Date(data.valid_to).toLocaleDateString()}</span></p>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Handle Export
+        function exportData(format) {
+            if(!lastResult) return;
+            let content, mime, filename;
+            if(format === 'json') {
+                content = JSON.stringify(lastResult, null, 2);
+                mime = 'application/json';
+                filename = `cratedns-${currentMode}-${Date.now()}.json`;
+            } else if(format === 'csv' && currentMode === 'dns') {
+                content = 'Type,Domain,Value,TTL\n' + lastResult.records.map(r => `${r.record_type},${lastResult.domain},"${r.value.replace(/"/g, '""')}",${r.ttl||''}`).join('\n');
+                mime = 'text/csv';
+                filename = `cratedns-dns-${Date.now()}.csv`;
+            } else {
+                alert('CSV export only supported for DNS tab currently.'); return;
+            }
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+        }
+
+        // Form Submit
+        loadHistory();
+        document.getElementById('main-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const domain = document.getElementById('domain-input').value.trim();
+            if (!domain) return;
+            saveHistory(domain);
+            
+            // UI setup
+            const initial = document.getElementById('initial-state'), resCont = document.getElementById('results-container'), errorState = document.getElementById('error-state');
+            const dataView = document.getElementById('data-view'), btnText = document.getElementById('btn-text'), btnLoader = document.getElementById('btn-loader');
+            const actionBar = document.getElementById('action-bar');
+            
+            initial.classList.add('hidden'); resCont.classList.add('hidden'); errorState.classList.add('hidden'); actionBar.classList.add('hidden');
+            btnText.classList.add('hidden'); btnLoader.classList.remove('hidden'); dataView.innerHTML = '<div class="p-10 flex justify-center"><div class="animate-pulse h-4 bg-dark-700 w-1/3 rounded"></div></div>';
+            resCont.classList.remove('hidden');
+
             try {
-                // Fetch API
-                const url = `/api/lookup/${encodeURIComponent(domain)}?type=${encodeURIComponent(recordType)}`;
+                let url = '';
+                if(currentMode === 'dns') {
+                    url = `/api/lookup/${encodeURIComponent(domain)}?type=${document.getElementById('record-type').value}`;
+                } else if(currentMode === 'whois') {
+                    url = `/api/whois/${encodeURIComponent(domain)}`;
+                } else if(currentMode === 'ssl') {
+                    url = `/api/ssl/${encodeURIComponent(domain)}`;
+                }
+
                 const response = await fetch(url);
                 const data = await response.json();
+                lastResult = data;
                 
-                skeleton.classList.add('hidden');
-                results.classList.remove('hidden');
-                
-                if (data.status === 'success' && data.records && data.records.length > 0) {
-                    // Success State
-                    statusBanner.className = 'px-6 py-3 border-b flex items-center gap-2 text-sm font-medium bg-green-500/10 border-green-500/20 text-green-400';
-                    statusIcon.innerHTML = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-                    statusText.textContent = `Found ${data.records.length} ${recordType} record(s) for ${domain}`;
-                    
-                    resultsTable.classList.remove('hidden');
-                    
-                    // Render Rows
-                    resultsBody.innerHTML = '';
-                    data.records.forEach(repo => {
-                        const tr = document.createElement('tr');
-                        tr.className = 'hover:bg-dark-800/50 transition-colors group';
-                        tr.innerHTML = `
-                            <td class="py-3 px-6"><span class="bg-dark-900 border border-dark-700 text-brand-400 px-2 py-1 rounded text-xs font-bold">${repo.record_type}</span></td>
-                            <td class="py-3 px-6 text-slate-400 whitespace-nowrap">${domain}</td>
-                            <td class="py-3 px-6 text-slate-200 break-all"><div class="flex items-center gap-2">
-                                ${repo.value}
-                                <button type="button" class="text-slate-600 hover:text-white opacity-0 group-hover:opacity-100 transition-all" onclick="navigator.clipboard.writeText('${repo.value.replace(/'/g, "\\'")}')" title="Copy value">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                </button>
-                            </div></td>
-                            <td class="py-3 px-6 text-right text-slate-500">${repo.ttl || '--'}s</td>
-                        `;
-                        resultsBody.appendChild(tr);
-                    });
+                // Fire off authenticity check independently
+                const authBadge = document.getElementById('authenticity-badge');
+                authBadge.classList.add('hidden');
+                fetch(`/api/authenticity/${encodeURIComponent(domain)}`)
+                    .then(res => res.json())
+                    .then(auth => {
+                        if(auth.status === 'success') {
+                            authBadge.classList.remove('hidden');
+                            if(auth.is_authentic) {
+                                authBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]';
+                                authBadge.innerHTML = `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg> Authentic (Score: ${auth.score})`;
+                            } else {
+                                authBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded border border-orange-500/30 bg-orange-500/10 text-orange-400 flex items-center gap-1.5 shadow-[0_0_10px_rgba(249,115,22,0.2)]';
+                                authBadge.innerHTML = `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> Unverified (Score: ${auth.score})`;
+                            }
+                        }
+                    }).catch(() => {});
+
+                if (data.status === 'success') {
+                    // Update Banner
+                    document.getElementById('status-banner').className = 'px-6 py-3 border-b flex items-center justify-between text-sm font-medium bg-green-500/10 border-green-500/20 text-green-400';
+                    document.getElementById('status-icon').innerHTML = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    document.getElementById('status-text').textContent = 'Success';
+                    document.getElementById('latency-text').textContent = data.latency_ms ? `${data.latency_ms}ms` : '';
+                    actionBar.classList.remove('hidden');
+
+                    if(currentMode === 'dns') dataView.innerHTML = renderDNS(data.records, data.domain);
+                    if(currentMode === 'whois') dataView.innerHTML = renderWHOIS(data);
+                    if(currentMode === 'ssl') dataView.innerHTML = renderSSL(data);
+
                 } else {
-                    // Handled Error (E.g. NXDOMAIN, Timeout, NoAnswer)
-                    throw new Error(data.detail || data.message || 'No records found');
+                    throw new Error(data.message || 'Error occurred');
                 }
             } catch (err) {
-                // Error State
-                statusBanner.className = 'px-6 py-3 border-b flex items-center gap-2 text-sm font-medium bg-red-500/10 border-red-500/20 text-red-400';
-                statusIcon.innerHTML = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-                statusText.textContent = `No Record Found`;
+                dataView.innerHTML = '';
+                document.getElementById('status-banner').className = 'px-6 py-3 border-b flex items-center justify-between text-sm font-medium bg-red-500/10 border-red-500/20 text-red-400';
+                document.getElementById('status-icon').innerHTML = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                document.getElementById('status-text').textContent = 'Error';
+                document.getElementById('latency-text').textContent = '';
                 
-                resultsTable.classList.add('hidden');
                 errorState.classList.remove('hidden');
-                
-                // Detailed Error message
-                if (err.message.includes('No records found') || err.message.includes('No Record Found') || err.message.includes('does not exist')) {
-                    errorTitle.textContent = 'No Records Found';
-                    errorDesc.textContent = `We couldn't find any ${recordType} records for ${domain}. It might not exist or hasn't propagated yet.`;
-                } else if (err.message.toLowerCase().includes('timeout')) {
-                    errorTitle.textContent = 'Query Timed Out';
-                    errorDesc.textContent = `The DNS query for ${domain} took too long to complete. The nameservers might be slow or unresponsive.`;
-                } else {
-                    errorTitle.textContent = 'Resolution Error';
-                    errorDesc.textContent = err.message;
-                }
+                document.getElementById('error-title').textContent = 'Diagnostic Failed';
+                document.getElementById('error-desc').textContent = err.message;
             } finally {
-                // Reset Button loading state
-                btnLoader.classList.add('hidden');
-                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden'); btnText.classList.remove('hidden');
             }
         });
+
+        // --- Particle Network Background ---
+        const canvas = document.getElementById('network-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles;
+
+        function initBG() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            const particleCount = Math.floor((width * height) / 14000);
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    radius: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+
+        function animateBG() {
+            requestAnimationFrame(animateBG);
+            ctx.clearRect(0, 0, width, height);
+            
+            ctx.fillStyle = '#60A5FA';
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${0.2 * (1 - dist / 150)})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', initBG);
+        initBG();
+        animateBG();
+
     </script>
 </body>
 </html>
